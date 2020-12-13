@@ -1,11 +1,11 @@
 ﻿using System.Net.NetworkInformation;
 using System.Collections.Generic;
-
 namespace workspacer.Bar.Widgets
 {
     public class NetworkWidget : BarWidgetBase
     {
-
+        public string WifiSymbol { get; set; } = "Wifi";
+        public string EthernetSymbol { get; set; } = "Ethernet";
         public int Interval { get; set; } = 5000;
 
         private System.Timers.Timer _timer;
@@ -14,30 +14,25 @@ namespace workspacer.Bar.Widgets
         {
             var parts = new List<IBarWidgetPart>();
             string symbol;
-
             foreach (NetworkInterface netInt in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (netInt.OperationalStatus == OperationalStatus.Up && netInt.NetworkInterfaceType != (NetworkInterfaceType.Tunnel | NetworkInterfaceType.Loopback))
                 {
 
                     if (netInt.Name == "Wifi")
-                        symbol = "\uf1eb";
+                        symbol = WifiSymbol;
                     else if (netInt.Name == "Ethernet")
-                        symbol = "\uf796";
+                        symbol = EthernetSymbol;
                     else
                         symbol = netInt.Name;
 
-                    parts.Add(CreatePart(symbol));
+                    parts.Add(Part(text: symbol));
                 }
             }
 
             return parts.ToArray();
         }
 
-        private IBarWidgetPart CreatePart(string name)
-        {
-            return Part(name, null, null, null);
-        }
 
         public override void Initialize()
         {
