@@ -6,41 +6,43 @@ using System.Collections.Generic;
 
 namespace workspacer.Bar.Widgets
 {
+    public enum DriveProperty
+    {
+        Label = 1,
+        Letter = 2,
+        Format = 4,
+        TotalSize = 8,
+        FreeSpace = 16,
+        FreeSpacePercentage = 32
+    }
 
     public class DriveWidget : BarWidgetBase
     {
 
         public int Interval { get; set; } = 100000;
         public bool HasAction { get; set; } = true;
+        public bool HasIcons { get; set; } = true;
         private System.Timers.Timer _timer;
-        public DriveType VisibleDriveTypes { get; set; } = DriveType.Fixed | DriveType.Removable;
-        public DriveProperty DriveInformation { get; set; } = DriveProperty.Letter | DriveProperty.FreeSpace;
+        public DriveType DriveTypes { get; set; } = DriveType.Fixed | DriveType.Removable;
+        public DriveProperty DriveInformation { get; set; } = DriveProperty.Letter | DriveProperty.FreeSpace | DriveProperty.FreeSpace;
 
 
-        public enum DriveProperty
-        {
-            Label = 1,
-            Letter = 2,
-            Format = 4,
-            TotalSize = 8,
-            FreeSpace = 16,
-            FreeSpacePercentage = 32
-        }
-
-
+        
         public override IBarWidgetPart[] GetParts()
         {
             var parts = new List<IBarWidgetPart>();
             DriveInfo[] allDrives = DriveInfo.GetDrives();
-
+            
+            
             foreach (var drive in allDrives)
             {
-                if (drive.DriveType.Equals(VisibleDriveTypes))
+                if (drive.DriveType.Equals(DriveTypes))
                 {
                     parts.Add(CreatePart(drive, DriveInformation));
                 }
+               
             }
-
+           
             return parts.ToArray();
         }
 
@@ -49,7 +51,7 @@ namespace workspacer.Bar.Widgets
         {
 
             if (HasAction)
-                return Part(getDriveInfo(drive, DriveInformation), null, null, () => Process.Start("explorer.exe", $"{drive.RootDirectory}"));
+                return Part(getDriveInfo(drive, DriveInformation), partClicked: () => Process.Start("explorer.exe", $"{drive.RootDirectory}"));
             else
                 return Part(getDriveInfo(drive, DriveInformation));
         }
