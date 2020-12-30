@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace workspacer.Bar.Widgets
 {
+    [Flags]
     public enum DriveProperty
     {
         Label = 1,
@@ -19,14 +20,15 @@ namespace workspacer.Bar.Widgets
     public class DriveWidget : BarWidgetBase
     {
 
-        public int Interval { get; set; } = 1000;
-        public bool HasAction { get; set; } = true;
-        public bool HasIcons { get; set; } = false;        
-        public List<DriveType> DriveTypes { get; set; } = new List<DriveType> { DriveType.Fixed, DriveType.Removable };
+        public int Interval { get; set; } = 3000;
+        public bool IsClickable { get; set; } = true;
+        public bool IconsEnabled { get; set; } = true;
+        public bool IsAscending { get; set; } = true;
+        public List<DriveType> Types { get; set; } = new List<DriveType> { DriveType.Fixed, DriveType.Removable };
         public DriveProperty DriveDetails { get; set; } = DriveProperty.Letter | DriveProperty.FreeSpace;
         public Dictionary<DriveType, string> Icons { get; set; } = new Dictionary<DriveType, string>()
         {
-            {DriveType.Fixed, "\uf0a0"},
+        {DriveType.Fixed, "\uf0a0"},
             {DriveType.Removable, "\uf7c2" },
             {DriveType.Network, "\uf233" },
             {DriveType.CDRom, "\uf51f" },
@@ -37,70 +39,67 @@ namespace workspacer.Bar.Widgets
 
         private System.Timers.Timer _timer;
 
-
         public override IBarWidgetPart[] GetParts()
         {
-            var parts = new List<IBarWidgetPart>();
             DriveInfo[] allDrives = DriveInfo.GetDrives();
+            List<IBarWidgetPart> parts = new List<IBarWidgetPart>();
 
             foreach (var drive in allDrives)
             {
-                if (DriveTypes.Contains(drive.DriveType))
+
+                if (Types.Contains(drive.DriveType))
                 {
                     parts.Add(CreatePart(drive, DriveDetails));
                 }
             }
-            
+
+            if (IsAscending)
+                parts.Reverse();
+
+                   
             return parts.ToArray();
         }
 
 
         private IBarWidgetPart CreatePart(DriveInfo drive, DriveProperty DriveDetails)
         {
-
-            if (HasAction)
-                return Part(getDriveInfo(drive, DriveDetails), partClicked: () => Process.Start("explorer.exe", $"{drive.RootDirectory}"));
-            else
-                return Part(getDriveInfo(drive, DriveDetails));
+            
+                if (IsClickable)
+                    return Part(getDriveInfo(drive, DriveDetails), partClicked: () => Process.Start("explorer.exe", $"{drive.RootDirectory}"));
+                else
+                    return Part(getDriveInfo(drive, DriveDetails));
         }
 
-        protected virtual string getDriveInfo(DriveInfo drive, DriveProperty DriveDetails)
+        private string getDriveInfo(DriveInfo drive, DriveProperty DriveDetails)
         {
             var properties = new List<String>();
-    
+           
             if (drive.IsReady)
             {
-                if (HasIcons)
+                if (IconsEnabled)
                     properties.Add(Icons[drive.DriveType]);
 
-                if ((DriveDetails & DriveProperty.Label) == DriveProperty.Label)
+                if (DriveDetails.HasFlag(DriveProperty.Label))
                     properties.Add(drive.VolumeLabel);
 
-                if ((DriveDetails & DriveProperty.Letter) == DriveProperty.Letter)
+                if (DriveDetails.HasFlag(DriveProperty.Letter))
                     properties.Add(drive.Name.Remove(drive.Name.Length - 1, 1));
 
-                if ((DriveDetails & DriveProperty.Format) == DriveProperty.Format)
+                if (DriveDetails.HasFlag(DriveProperty.Format))
                     properties.Add(drive.DriveFormat);
 
-                if ((DriveDetails & DriveProperty.TotalSize) == DriveProperty.TotalSize)
+                if (DriveDetails.HasFlag(DriveProperty.TotalSize))
                     properties.Add((drive.TotalSize / Math.Pow(1024, 3)).ToString("0.0 GB"));
 
-                if ((DriveDetails & DriveProperty.FreeSpace) == DriveProperty.FreeSpace)
+                if (DriveDetails.HasFlag(DriveProperty.FreeSpace))
                     properties.Add((drive.AvailableFreeSpace / Math.Pow(1024, 3)).ToString("0.0 GB"));
 
-                if ((DriveDetails & DriveProperty.FreeSpacePercentage) == DriveProperty.FreeSpacePercentage)
-                {
-                    double freeSpace = (drive.AvailableFreeSpace / Math.Pow(1024, 3));
-                    double totalSpace = (drive.TotalSize / Math.Pow(1024, 3));
-                    properties.Add((freeSpace / totalSpace).ToString("0%"));
-                }
-                properties.Add(" ");
+                if (DriveDetails.HasFlag(DriveProperty.FreeSpacePercentage))
+                    properties.Add(((drive.AvailableFreeSpace / Math.Pow(1024, 3)) / (drive.TotalSize / Math.Pow(1024, 3))).ToString("0%"));
+
+            }
+              
                 return string.Join(" ", properties);
-            }
-            else
-            {
-                return string.Empty;
-            }
         }
 
 
